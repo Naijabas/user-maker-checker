@@ -30,7 +30,7 @@ class AuthController extends BaseController
         ]);
 
         if($validator->fails()){
-            return $this->sendError('Validation Error.', $validator->errors());
+            return $this->sendError('Validation Error.', $validator->errors(), 422);
         }
 
         $input = $request->all();
@@ -38,7 +38,7 @@ class AuthController extends BaseController
         $success['token'] =  $user->createToken('User Created')->plainTextToken;
         $success['email'] =  $user->email;
 
-        return $this->sendResponse($success, 'User registered successfully.');
+        return $this->sendResponse($success, 'User registered successfully.', 201);
     }
 
     /**
@@ -49,6 +49,15 @@ class AuthController extends BaseController
      */
     public function login(Request $request): JsonResponse
     {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if($validator->fails()){
+            return $this->sendError('Validation Error.', $validator->errors(), 422);
+        }
+
         if(Auth::attempt(['email' => $request->email, 'password' => $request->password])){
             $user = Auth::user();
             $success['token'] =  $user->createToken('Logged In')->plainTextToken;
@@ -57,19 +66,18 @@ class AuthController extends BaseController
             return $this->sendResponse($success, 'User logged in successfully.');
         }
         else{
-            return $this->sendError('Unauthorised.', ['error'=>'Unauthorised']);
+            return $this->sendError('Unauthorised.', ['error'=>'Unauthorised'], 401);
         }
     }
 
 
-    /**
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function logout(Request $request): JsonResponse
+
+    public function logout()
     {
-        $request->user()->currentAccessToken()->delete();
-        $response = ['message' => 'You have been successfully logged out!'];
-        return response()->json($response, 200);
+        $user = Auth::user();
+        $user->token()->revoke();
+        $user->token()->delete();
+
+        return response()->json(null, 204);
     }
 }

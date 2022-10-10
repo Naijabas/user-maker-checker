@@ -179,7 +179,7 @@ class RequestController extends BaseController
     {
         $user = json_decode($request->details);     //  Decode the object
         $realUser = User::findOrFail($user->id);    //  Find the User to be updated
-        
+
         //  Update the User status here
         $updateUser = $realUser->update([
             'approved' => true
