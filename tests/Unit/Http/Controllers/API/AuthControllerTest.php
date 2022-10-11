@@ -2,6 +2,7 @@
 
 namespace Http\Controllers\API;
 
+use App\Models\User;
 use Tests\TestCase;
 use App\Http\Controllers\API\AuthController;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -10,6 +11,10 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthControllerTest extends TestCase
 {
+    /**
+     * Test if email and password fields are required(Assert for the status code and Json data)
+     * @return void
+     */
     public function testRequireEmailAndLogin()
     {
         $this->json('POST', '/api/login')
@@ -25,11 +30,15 @@ class AuthControllerTest extends TestCase
 
     }
 
+    /**
+     * Test if user will log in successfully(Assert for the status code and Json structure)
+     * @return void
+     */
     public function testUserLoginSuccessfully()
     {
         $user = ['email' => 'superadmin1@admin.com', 'password' => 'password'];
         $this->json('POST', 'api/login', $user)
-            ->assertStatus(200)
+            ->assertStatus(200) //Check if the status code is 200
             ->assertJsonStructure([
                 'success',
                 'data' => [
@@ -41,6 +50,10 @@ class AuthControllerTest extends TestCase
     }
 
 
+    /**
+     * Test if register endpoint works(Assert for the status code and Json structure)
+     * @return void
+     */
     public function testRegisterSuccessfully()
     {
         $register = [
@@ -63,6 +76,10 @@ class AuthControllerTest extends TestCase
             ]);
     }
 
+    /**
+     * Test if name, email and password fields are required(Assert for the status code and Json data)
+     * @return void
+     */
     public function testRequireNameEmailAndPassword()
     {
         $this->json('POST', 'api/register')
@@ -79,6 +96,10 @@ class AuthControllerTest extends TestCase
             ]);
     }
 
+    /**
+     * Test if password field is required(Assert for the status code and Json data)
+     * @return void
+     */
     public function testRequirePasswordConfirmation()
     {
         $register = [
@@ -99,6 +120,10 @@ class AuthControllerTest extends TestCase
             ]);
     }
 
+    /**
+     * Test if password matches the confirmation password(Assert for the status code and Json data)
+     * @return void
+     */
     public function testMatchPasswordConfirmation()
     {
         $register = [
@@ -118,5 +143,20 @@ class AuthControllerTest extends TestCase
                     'c_password' => ['The confirmation password and password must match.']
                 ]
             ]);
+    }
+
+    /**
+     * Test if user is logged in normally
+     * @return void
+     */
+    public function testUserIsLoggedOutProperly()
+    {
+        $user = User::factory()->create(['email' => 'myusedr@admin.com', 'password' => 'password']);
+        $token = $user->createToken('Logged In')->plainTextToken;
+        $headers = ['Authorization' => "Bearer $token"];
+        $user = User::find($user->id);
+
+        $this->json('post', '/api/logout', [], $headers)->assertStatus(204);
+        $this->assertEquals(null, $user->plainTextToken);
     }
 }
